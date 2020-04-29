@@ -1,4 +1,4 @@
-pyOpenSSL==0.13.1
+pyOpenSSL==17.5.0
 
 pyparsing==2.0.1
 
