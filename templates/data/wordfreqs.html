@@ -1,0 +1,31 @@
+{% extends '../base.html' %}
+{% block content %}
+
+<div class="container">
+  <h4>Word Frequencies in System</h4>
+  <br>
+  <br>
+  <div class="row">
+    <div class="col-md-12">
+      <form action="{% url 'freqs' %}" method="get">
+        {% csrf_token %}
+        <ul class="list-group list-group-flush list-group-horizontal">
+          <li class='list-group-item flex-fill' style="display:none;">&nbsp;</li>
+          <li class='list-group-item flex-fill'>{{form.date_start}}</li>
+          <li class='list-group-item flex-fill'>{{form.date_end}}</li>
+          <li class='list-group-item flex-fill'>{{form.source}}</li>
+          <li class='list-group-item flex-fill'><input type="submit" value="Filter"></li>
+        </ul>
+      </form>
+    </div>
+  </div>
+  <div class="row">
+
+    {% autoescape off %}
+    {{ results }}
+    {% endautoescape %}
+
+  </div>
+</div>
+
+{% endblock %}

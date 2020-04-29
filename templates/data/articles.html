@@ -1,0 +1,46 @@
+{% extends '../base.html' %}
+{% block content %}
+
+<div class="container">
+  <h4>Articles in System</h4>
+  <span>Found {{articles}} articles.</span>
+  <br>
+  <br>
+  <div class="row">
+    <div class="col-md-12">
+      <form action="{% url 'articles_view' %}" method="get">
+        {% csrf_token %}
+        <ul class="list-group list-group-flush list-group-horizontal">
+          <li class='list-group-item flex-fill' style="display:none;">&nbsp;</li>
+          <li class='list-group-item flex-fill'>{{form.date_start}}</li>
+          <li class='list-group-item flex-fill'>{{form.date_end}}</li>
+          <li class='list-group-item flex-fill'>{{form.source}}</li>
+          <li class='list-group-item flex-fill'><input type="submit" value="Filter"></li>
+        </ul>
+      </form>
+    </div>
+  </div>
+  {% autoescape off %}
+  {{ plotdiv }}
+  {% endautoescape %}
+  <table class="table">
+    <thead>
+      <th>Date</th>
+      <th>Headline</th>
+      <th>Length</th>
+      <th>Source</th>
+    </thead>
+    <tbody>
+      {% for article in object_list %}
+      <tr>
+        <td>{{article.date_written}}</td>
+        <td> <a href="{% url 'article_detail' pk=article.id %}"> {{article.headline }} </a></td>
+        <td>{{article.length}} words</td>
+        <td>{{article.source.name}}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

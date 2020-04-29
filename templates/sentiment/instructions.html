@@ -1,0 +1,23 @@
+{% extends 'sentiment/index.html' %}
+{% block main %}
+<div class="container">
+  <div class="row">
+    <div class="col-md-2">
+
+    </div>
+    <div class="col-md-8">
+      <h4>Instructions</h4>
+    <p>You can explore the relationships between the variables you specified for your model by clicking on the above options.
+    To get an overview of all the signals, press <b>Overview</b>. To see correlations of your signals across a time series, press <b>Correlation Graphs</b>.
+    To see the correlation matrix for your model, press <b>Correlation Tables</b>.
+    For all VAR related calculations see: the <b>Lag Order Tables</b>, which shows
+    the lag order selection calculation; the <b> Stationary</b> section, which
+    shows the results of the variable stationary tests; <b>VAR Coefficients</b>, which shows the
+    results of the VAR analysis; and <b>Granger Causality</b>, where you can determine the causal relationships
+     between the signals. </p>
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}

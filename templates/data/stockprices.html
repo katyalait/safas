@@ -1,0 +1,71 @@
+{% extends '../base.html' %}
+{% block content %}
+
+<div class="container">
+  <h3>Stock Prices</h3>
+  <span>Currently showing {{stocks}} stock data points.</span>
+  <div class="row">
+    <div class="col-md-12">
+      <form action="{% url 'stockprice_view' %}" method="get">
+        {% csrf_token %}
+        <ul class="list-group list-group-flush list-group-horizontal">
+          <li class='list-group-item flex-fill' style="display:none;">&nbsp;</li>
+          <li class='list-group-item flex-fill'>{{form.date_start}}</li>
+          <li class='list-group-item flex-fill'>{{form.date_end}}</li>
+          <li class='list-group-item flex-fill'>{{form.assets}}</li>
+          <li class='list-group-item flex-fill'><input type="submit" value="Filter"></li>
+        </ul>
+      </form>
+    </div>
+  </div>
+  <div class="text-center">
+
+
+  <h4>Return - Nominal</h4>
+  {% autoescape off %}
+  {{ return }}
+  {% endautoescape %}
+  <hr>
+  <h4>Return - Moving Average</h4>
+  {% autoescape off %}
+  {{ retewm }}
+  {% endautoescape %}
+  <hr>
+  <h4>Price - Nominal</h4>
+  {% autoescape off %}
+  {{ price }}
+  {% endautoescape %}
+  <hr>
+  <h4>Volume - Moving Average</h4>
+  {% autoescape off %}
+  {{ volewm }}
+  {% endautoescape %}
+  <hr>
+  <hr>
+
+  <!-- <table class="table">
+    <thead>
+      <th>Date</th>
+      <th>Asset</th>
+      <th>Open</th>
+      <th>Close</th>
+      <th>Return</th>
+      <th>Volume</th>
+    </thead>
+    <tbody>
+      {% for stock in object_list %}
+      <tr>
+        <td>{{stock.date}}</td>
+        <td>{{stock.asset.name }}</td>
+        <td>{{stock.open}}</td>
+        <td>{{stock.close}}</td>
+        <td>{{stock.interday_volatility}}</td>
+        <td>{{stock.volume}}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table> -->
+    </div>
+</div>
+
+{% endblock %}

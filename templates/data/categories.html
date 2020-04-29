@@ -1,0 +1,22 @@
+{% extends '../base.html' %}
+{% block content %}
+
+<div class="container">
+  <h3>All Categories in the System</h3>
+  <br>
+  <table class="table">
+    <thead>
+      <th>Name</th>
+    </thead>
+    <tbody>
+      {% for category in object_list %}
+      <tr>
+        <td>{{category.name}}</td>
+
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

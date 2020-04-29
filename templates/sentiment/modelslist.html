@@ -1,0 +1,26 @@
+{% extends 'sentiment/index.html' %}
+{% block main %}
+<div class="container">
+  <div class="row">
+    <div class="col-md-12">
+      <table class="table">
+        <thead>
+          <th>Name</th>
+          <th>Description</th>
+          <th> </th>
+        </thead>
+        <tbody>
+          {% for model in object_list %}
+          <tr>
+            <td>{{model.model_name}}</td>
+            <td>{{model.description}}</td>
+
+            <td><a href="{% url 'delete_model' pk=model.id %}">Delete </a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

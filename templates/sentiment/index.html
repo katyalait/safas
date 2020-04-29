@@ -1,0 +1,34 @@
+{% extends '../base.html' %}
+{% block content %}
+
+<div class="container">
+  <h4 class="text-center">Sentiment Asset Experiment Analysis </h4>
+  <hr>
+<div class="text-center">
+  <a class="btn btn-primary" href="{% url 'graph_sent' %}">Overview</a>
+
+  <a class="btn btn-primary" href="{% url 'correl_graph' %}">Correlation Graphs</a>
+  <a class="btn btn-primary" href="{% url 'correl_table' %}">Correlation Tables</a>
+  <a class="btn btn-primary" href="{% url 'lag_order' %}">Lag Order Tables</a>
+  <!-- <a class="btn btn-primary" href="{% url 'models' %}">Experiment List</a> -->
+  <a class="btn btn-primary" href="{% url 'stationary' %}">Stationary</a>
+  <a class="btn btn-primary" href="{% url 'varoverview' %}">VAR Coefficients</a>
+  <a class="btn btn-primary" href="{% url 'granger' %}">Granger Causality</a>
+
+</div>
+
+
+
+
+
+
+
+
+
+
+<br><br>
+<p class="text-center"><i>Note: all figures are expressed as z-scores, unless otherwise specified.</i></p>
+{% block main %}
+{% endblock %}
+</div>
+{% endblock %}

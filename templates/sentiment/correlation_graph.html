@@ -1,0 +1,26 @@
+{% extends 'sentiment/index.html' %}
+{% block main %}
+<div class="container">
+  <div class="row">
+    <div class="col-md-12">
+      <form action="{% url 'correl_graph' %}" method="get">
+        {% csrf_token %}
+        <ul class="list-group list-group-flush list-group-horizontal">
+          <li class="list-group-item">Model Name:</li>
+          <li class='list-group-item flex-fill'>{{form.model_name}}</li>
+          <li class="list-group-item">Variable Name:</li>
+          <li class='list-group-item flex-fill'>{{form.variable}}</li>
+          <li class='list-group-item flex-fill' style="display:none;">&nbsp;</li>
+          <br>
+          <br>
+          <li class='list-group-item flex-fill'><input type="submit" value="Go"></li>
+
+        </ul>
+      </form>
+    </div>
+  </div>
+      {% autoescape off %}
+      {{ plotdiv }}
+      {% endautoescape %}
+</div>
+{% endblock %}

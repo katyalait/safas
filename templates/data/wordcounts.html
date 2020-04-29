@@ -1,0 +1,24 @@
+{% extends '../base.html' %}
+{% block content %}
+
+<div class="container">
+  <h3>Negative Word Presence</h3>
+  <h5>A single unit represents presence in an article within the database.</h5>
+  <br>
+  <table class="table table-bordered">
+    <thead>
+      <th>Word</th>
+      <th>Frequency</th>
+    </thead>
+    <tbody>
+      {% for wordcount in object_list %}
+      <tr>
+        <td>{{wordcount.word__word}}</td>
+        <td>{{wordcount.total_articles }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% endblock %}

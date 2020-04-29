@@ -1,0 +1,43 @@
+{% extends 'sentiment/index.html' %}
+{% block main %}
+<div class="container">
+  <div class="row">
+    <div class="col-md-12">
+      <form action="{% url 'granger' %}" method="get">
+        {% csrf_token %}
+        <ul class="list-group list-group-flush list-group-horizontal">
+          <li class="list-group-item">Year:</li>
+          <li class='list-group-item flex-fill'>{{form.year}}</li>
+          <li class="list-group-item">Model Name:</li>
+          <li class='list-group-item flex-fill'>{{form.model_name}}</li>
+
+          <li class="list-group-item">Variable Name:</li>
+          <li class='list-group-item flex-fill'>{{form.variable}}</li>
+          <li class="list-group-item">Lag Order:</li>
+          <li class='list-group-item flex-fill'>{{form.lag_order}}</li>
+          <li class='list-group-item flex-fill' style="display:none;">&nbsp;</li>
+          <br>
+          <br>
+          <li class='list-group-item flex-fill'><input type="submit" value="Go"></li>
+
+        </ul>
+      </form>
+    </div>
+  </div>
+  <div class="row">
+        {% if set %}
+          {% for table in tables %}
+            {% autoescape off %}
+            {{ table }}
+            {% endautoescape %}
+            <hr>
+          {% endfor %}
+        {% else %}
+          {% autoescape off %}
+          {{ tables }}
+          {% endautoescape %}
+        {% endif %}
+
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends 'sentiment/index.html' %}
+{% block main %}
+<div class="container">
+  <div class="row">
+    <div class="col-md-12">
+      <form action="{% url 'graph_sent' %}" method="get" >
+        {% csrf_token %}
+        <ul class="list-group list-group-flush flex-fill list-group-horizontal">
+          <li class='list-group-item flex-fill' style="display:none;">&nbsp;</li>
+          <li class="list-group-item flex-fill">Start:</li>
+          <li class='list-group-item flex-fill' style="font-size: 12px">{{form.date_start}}</li>
+          <li class="list-group-item flex-fill">End:</li>
+          <li class='list-group-item flex-fill' style="font-size: 12px">{{form.date_end}}</li>
+          <li class="list-group-item flex-fill">Model:</li>
+          <li class='list-group-item flex-fill'>{{form.model_name}}</li>
+          <li class='list-group-item flex-fill'><input type="submit" value="Go"></li>
+        </ul>
+      </form>
+    </div>
+  </div>
+    {% autoescape off %}
+    {{ plotdiv }}
+    {% endautoescape %}
+    <div class="row">
+
+    </div>
+</div>
+{% endblock %}

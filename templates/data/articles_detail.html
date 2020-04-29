@@ -1,0 +1,65 @@
+{% extends '../base.html' %}
+{% block content %}
+{% load mathfilters %}
+<div class="container">
+  <h3>Article Detail</h3>
+  <hr>
+  <div class="row">
+    <div class="col-md-7">
+      <h5>Relevant Articles</h5>
+
+      {% autoescape off %}
+      {{ plotdiv }}
+      {% endautoescape %}
+      <table class="table table-striped">
+        <thead>
+          <th>Headline</th>
+          <th>Date</th>
+          <th>Relevance</th>
+          <th>Negative Sentiment</th>
+        </thead>
+        <tbody>
+          {% for article in related_articles %}
+          <tr>
+            <td> <a href="{% url 'article_detail' pk=article.0.id %}"> {{ article.0.headline|truncatechars:50}}</a></td>
+            <td>{{ article.0.date_written|date:"d/m/y"}}</td>
+            <td>{{ article.1|floatformat:-2 }}</td>
+            <td>{{ article.0.smarter_negative_words|div:article.0.length|mul:100|floatformat:-5}}%</td>
+            {% endfor %}
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+    <div class="col-md-5">
+      <h5>This Article</h5>
+      <table class="table">
+        <thead>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Headline:</td>
+            <td>{{object.headline}}</td>
+          </tr>
+          <tr>
+            <td>Date Written:</td>
+            <td>{{object.date_written}}</td>
+          </tr>
+          <tr>
+            <td>Negative Words:</td>
+            <td>{{object.smarter_negative_words}} words</td>
+          </tr>
+          <tr>
+            <td>Length:</td>
+            <td>{{object.length}}</td>
+          </tr>
+          <tr>
+            <td>Contents:</td>
+            <td>{{object.contents}}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
