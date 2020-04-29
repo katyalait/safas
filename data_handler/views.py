@@ -9,7 +9,6 @@ from django.shortcuts import redirect
 from django.views.generic.base import TemplateView
 from .data_handler import get_related_articles, get_relevant_stocks, produce_article_freq_plots, produce_source_article_freq_plots, produce_stock_freq_plots
 from rest_framework import generics
-from data_handler.serializers import SourceSerializer, ArticleSerializer, WordCountSerializer, StockPriceSerializer, TimeSeriesSerializer, UniqueArticleSerializer
 from data_handler.models import Source, Article, WordsInArticleCount, StockPrice, Asset
 from sentiment.models import Category
 from rest_pandas import PandasView
@@ -135,7 +134,6 @@ class ArticleDetailView(DetailView):
 
 class WordCountView(ListView):
     paginate_by = 10
-    serializer_class = WordCountSerializer
     template_name='data/wordcounts.html'
     def get_queryset(self):
         queryset = WordsInArticleCount.objects.filter(word__categories__name__in=["Negativ"]).values('word__word').annotate(total_articles=Count('word')).order_by('-total_articles')
