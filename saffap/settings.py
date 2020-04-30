@@ -90,6 +90,11 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 50
 }
 
+# Honor the 'X-Forwarded-Proto' header for request.is_secure()
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Allow all host headers
+ALLOWED_HOSTS =  ['localhost', '127.0.0.1', '[::1]']
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
