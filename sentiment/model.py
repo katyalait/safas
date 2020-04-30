@@ -321,8 +321,6 @@ class SentimentPriceModel(object):
             df = pd.concat([df, constants], sort=False)
             df = pd.concat([df, durbin], sort=False)
             df = pd.concat([df, rsquared], sort=False)
-
-
             df = df.fillna("-")
             return df
 
