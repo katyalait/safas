@@ -94,7 +94,7 @@ REST_FRAMEWORK = {
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 # Allow all host headers
-ALLOWED_HOSTS =  ['localhost', '127.0.0.1', '[::1]']
+ALLOWED_HOSTS =  ['localhost', '127.0.0.1', '.herokuapp.com']
 # Database
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
