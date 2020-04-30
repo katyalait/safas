@@ -35,7 +35,7 @@ class ArticlePreprocessor(object):
         articles_len = len(self.df.index)
         for index, row in self.df.iterrows():
             article = self.exist_arts.loc[self.exist_arts['headline']==row.headline]
-            if not article.empty:
+            if  article.empty:
                 progress(index, articles_len, "Parsing article {}/{}... ".format(index, articles_len))
                 source = Source.objects.filter(name=row['source']).first()
                 if not source:
