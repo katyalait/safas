@@ -25,7 +25,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 class ArticlePreprocessor(object):
     def __init__(self, filename):
-        self.df = pd.read_csv(os.path.join(BASE_DIR, filename), columns=["headline", "contents", ""]).dropna()
+        self.df = pd.read_csv(os.path.join(BASE_DIR, filename)).dropna()
 
         self.exist_arts = pd.DataFrame(([a['date_written'], a['headline']] for a in
                                             Article.objects.all().values('headline', 'date_written').order_by('headline')),
