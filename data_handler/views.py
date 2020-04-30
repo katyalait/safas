@@ -208,7 +208,7 @@ class ArticlePreprocessorView(FormView):
         path = save_file(self.request.FILES['file'], self.request.POST['title'])
         print("Success! File saved to {}".format(path))
         ap = ArticlePreprocessor(path)
-        fdp.create_objects()
+        ap.create_objects()
         return super().form_valid(form)
 
 class ArticleWordCountView(TemplateView):
