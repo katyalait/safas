@@ -66,6 +66,16 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+import os
+
+CACHES = {
+    "default": {
+         "BACKEND": "redis_cache.RedisCache",
+         "LOCATION": os.environ.get('REDIS_URL'),
+    }
+}
+
+
 ROOT_URLCONF = 'saffap.urls'
 
 TEMPLATES = [
