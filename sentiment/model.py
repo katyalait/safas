@@ -33,6 +33,8 @@ from django.db.models import Avg, Count, Min, Sum, Max
 from scipy.stats import t
 from scipy.stats import pearsonr
 
+from rq import Queue
+from worker import conn
 
 
 logging.basicConfig(format="%(levelname)s - %(asctime)s: %(message)s", datefmt= '%H:%M:%S', level=logging.INFO)
