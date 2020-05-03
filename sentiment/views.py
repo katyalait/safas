@@ -23,7 +23,7 @@ from nltk.corpus import stopwords
 from data_handler.helpers import progress
 from rq import Queue
 from worker import conn
-
+import django_rq
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -363,7 +363,7 @@ class Word2VecSPModelView(FormView):
         weighted = int(self.request.POST['weighted'])
         source_signals = int(self.request.POST['source_signals'])
 
-        q = Queue(connection=conn)
+        q = django_rq.get_queue('high')
         h_contents = self.request.POST['headline_contents']
         if h_contents:
             h_contents = h_contents.split(',')

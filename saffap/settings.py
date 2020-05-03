@@ -13,7 +13,8 @@ https://docs.djangoproject.com/en/3.0/ref/settings/
 import os
 import dj_database_url
 from dotenv import load_dotenv
-
+import os
+import django
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -21,6 +22,7 @@ PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
 dotenv_file = os.path.join(PROJECT_DIR, ".env")
 if os.path.isfile(dotenv_file):
     load_dotenv(dotenv_file)
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.0/howto/deployment/checklist/
@@ -51,7 +53,9 @@ INSTALLED_APPS = [
     'mathfilters',
     'django_extensions',
     'statsmodels',
-    'crispy_forms'
+    'crispy_forms',
+    'django_rq'
+
 ]
 
 CRISPY_TEMPLATE_PACK = 'bootstrap4'
@@ -65,16 +69,32 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
-import os
-
 CACHES = {
-    "default": {
-         "BACKEND": "redis_cache.RedisCache",
-         "LOCATION": os.environ.get('REDIS_URL'),
-    }
+    'default': {
+        'BACKEND': 'redis_cache.cache.RedisCache',
+        'LOCATION': os.environ.get('REDIS_URL', 'redis://localhost:6379'),
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'MAX_ENTRIES': 5000,
+        },
+    },
 }
 
+
+RQ_QUEUES = {
+    'high': {
+        'URL': os.getenv('REDIS_URL', 'redis://localhost:6379'), # If you're on Heroku
+        'DEFAULT_TIMEOUT': 50000,
+    },
+    'default': {
+        'URL': os.getenv('REDIS_URL', 'redis://localhost:6379'), # If you're on Heroku
+        'DEFAULT_TIMEOUT': 50000,
+    },
+    'low': {
+        'URL': os.getenv('REDIS_URL', 'redis://localhost:6379'), # If you're on Heroku
+        'DEFAULT_TIMEOUT': 50000,
+    },
+}
 
 ROOT_URLCONF = 'saffap.urls'
 
@@ -99,6 +119,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 50
 }
+
 
 # Honor the 'X-Forwarded-Proto' header for request.is_secure()
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -150,3 +171,4 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 DOC2VECMODEL = os.path.join(BASE_DIR, "doc2vec.model")
+django.setup()
