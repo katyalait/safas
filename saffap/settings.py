@@ -15,6 +15,8 @@ import dj_database_url
 from dotenv import load_dotenv
 import os
 import django
+import os
+import urlparse
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -69,29 +71,32 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+redis_url = urlparse.urlparse(os.environ.get('REDISTOGO_URL', 'redis://localhost:6959'))
+
 CACHES = {
     'default': {
         'BACKEND': 'redis_cache.cache.RedisCache',
-        'LOCATION': os.environ.get('REDIS_URL', 'redis://localhost:6379'),
+        'LOCATION': '%s:%s' % (redis_url.hostname, redis_url.port),
         'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
-            'MAX_ENTRIES': 5000,
-        },
+            'DB': 0,
+            'PASSWORD': redis_url.password,
+        }
     },
 }
 
 
 RQ_QUEUES = {
     'high': {
-        'URL': os.getenv('REDIS_URL', 'redis://localhost:6379'), # If you're on Heroku
+        'URL': os.getenv('REDISTOGO_URL', 'redis://localhost:6959'), # If you're on Heroku
         'DEFAULT_TIMEOUT': 50000,
     },
     'default': {
-        'URL': os.getenv('REDIS_URL', 'redis://localhost:6379'), # If you're on Heroku
+        'URL': os.getenv('REDISTOGO_URL', 'redis://localhost:6959'), # If you're on Heroku
         'DEFAULT_TIMEOUT': 50000,
     },
     'low': {
-        'URL': os.getenv('REDIS_URL', 'redis://localhost:6379'), # If you're on Heroku
+        'URL': os.getenv('REDISTOGO_URL', 'redis://localhost:6959'), # If you're on Heroku
         'DEFAULT_TIMEOUT': 50000,
     },
 }
