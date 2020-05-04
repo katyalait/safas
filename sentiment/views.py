@@ -24,8 +24,10 @@ from data_handler.helpers import progress
 from rq import Queue
 from worker import conn
 import django_rq
+from sentiment import model as md
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
 
 
 def html_convert(df, index=False):
@@ -86,7 +88,6 @@ class CorrelationGraph(TemplateView):
                                     For information regarding the suggested \
                                     lag, please see the Lag Order Tables </p>"
         return context
-
 
 class CorrelationTable(TemplateView):
     template_name = 'sentiment/correlation_table.html'
@@ -249,24 +250,22 @@ class SignificanceTable(TemplateView):
 class SuccessfulUpload(TemplateView):
     template_name = 'data/success.html'
 
-
-
 class ModelDefineView(FormView):
     template_name = "sentiment/definedmodel.html"
     form_class = DefinedModelForm
     success_url = 'success'
 
     def form_valid(self, form):
+        request = self.request.POST
         wordset = set()
-        cats = self.request.POST.getlist('categories')
-        assets = self.request.POST.getlist('assets')
-        source = int(self.request.POST['source'])
-        h_contents = self.request.POST['headline_contents']
-        weighted = int(self.request.POST['weighted'])
-        source_signals = int(self.request.POST['source_signals'])
-        included_countries = self.request.POST.getlist('included_countries')
-        print(included_countries)
-        q = Queue(connection=conn)
+        cats = request.getlist('categories')
+        assets = request.getlist('assets')
+        source = int(request['source'])
+        h_contents = request['headline_contents']
+        weighted = int(request['weighted'])
+        source_signals = int(request['source_signals'])
+        included_countries = request.getlist('included_countries')
+        include = request.getlist('include')
         h_contents = h_contents.split(',')
         if source==0 and (len(included_countries)==2 or len(included_countries)==0):
             irish_sources = list(Source.objects.filter(country=0).values_list('id', flat=True))
@@ -279,71 +278,8 @@ class ModelDefineView(FormView):
                 irish_sources = []
                 uk_sources = list(Source.objects.filter(country=1).values_list('id', flat=True))
         spm = model.SentimentPriceModel()
-        include = self.request.POST.getlist('include')
-
-        for asset in assets:
-            obj = Asset.objects.get(ticker=asset)
-            if "volume" in include:
-                volume = True
-            if "assets" in include:
-                assets = True
-            spm.add_asset_variable(asset=asset, column_name=obj.name, zscore=True, volume=True)
-        print(spm.get_df().head())
-        for cat in cats:
-            if source==0:
-                if weighted == 1 or source_signals == 1:
-                    for s in irish_sources:
-                        q.enqueue(spm.add_sentiment_variable, category=cat, column_name="{}.{}".format(s, cat), source_filter=[s],set=True, h_contents= h_contents, weighted=True, countries=True)
-                        # spm.add_sentiment_variable(category=cat, column_name="{}.{}".format(s, cat), source_filter=[s],set=True, h_contents= h_contents, weighted=True, countries=True)
-                    if source_signals == 0:
-                        df = spm.get_df()
-                        df["Irish {}".format(cat)] = 0
-                        print(df.head())
-                        for c in irish_sources:
-                            df["Irish {}".format(cat)] += df["{}.{}".format(c, cat)]
-                            df = df.drop(["{}.{}".format(c, cat)], axis=1)
-                        spm.multivariate_df = df
-
-                    for s in uk_sources:
-                        q.enqueue(spm.add_sentiment_variable, category=cat, column_name="{}.{}".format(s, cat), source_filter=[s],set=True, h_contents= h_contents, weighted=True, countries=True)
-
-                        # spm.add_sentiment_variable(category=cat, column_name="{}.{}".format(s, cat), source_filter=[s],set=True, h_contents= h_contents, weighted=True, countries=True)
-                    if source_signals == 0:
-                        df = spm.get_df()
-                        df["UK {}".format(cat)] = 0
-                        for c in uk_sources:
-                            df["UK {}".format(cat)] += df["{}.{}".format(c, cat)]
-                            df = df.drop(["{}.{}".format(c, cat)], axis=1)
-                        spm.multivariate_df = df
-
-                else:
-                    q.enqueue(spm.add_sentiment_variable, category=cat, column_name="UK {}".format(cat), source_filter=uk_sources,set=True, )
-                    q.enqueue(spm.add_sentiment_variable, category=cat, column_name="Irish {}".format(cat), source_filter=irish_sources,set=True, )
-
-                    # spm.add_sentiment_variable(category=cat, column_name="UK {}".format(cat), source_filter=uk_sources,set=True, )
-                    # spm.add_sentiment_variable(category=cat, column_name="Irish {}".format(cat), source_filter=irish_sources,set=True, )
-            else:
-                if weighted == 1:
-                    sources = list(Source.objects.all().values_list('id', flat=True))
-                    for s in sources:
-                        q.enqueue(spm.add_sentiment_variable, category=cat, column_name="{}.{}".format(s, cat), source_filter=[s], set=True, h_contents= h_contents, weighted=True, countries=False )
-
-                        # spm.add_sentiment_variable(category=cat, column_name="{}.{}".format(s, cat), source_filter=[s], set=True, h_contents= h_contents, weighted=True, countries=False)
-                    df = spm.get_df()
-                    df["{}".format(cat)] = 0
-                    for c in sources:
-                        df["{}".format(cat)] += df["{}.{}".format(c, cat)]
-                        df = df.drop(["{}.{}".format(c, cat)], axis=1)
-                    spm.multivariate_df = df
-                else:
-                    q.enqueue(spm.add_sentiment_variable, category=cat, column_name="{}".format(cat), set=True,  )
-
-                    # spm.add_sentiment_variable(category=cat, column_name="{}".format(cat), set=True, )
-        name = self.request.POST['name']
-        description = self.request.POST['description']
-        q.enqueue(spm.save_to_database, name, description )
-
-        # spm.save_to_database(name, description)
+        q = django_rq.get_queue('default', default_timeout=36000)
+        q.enqueue(spm.create_general_inquirer, request, cats, assets, source, h_contents, weighted, source_signals, included_countries, irish_sources, uk_sources, include, default_timeout=36000)
         return super().form_valid(form)
 
 class Word2VecSPModelView(FormView):
@@ -352,7 +288,6 @@ class Word2VecSPModelView(FormView):
     success_url = 'success'
 
     def form_valid(self, form):
-        wordset = set()
         cats = self.request.POST.getlist('l_categories')
         assets = self.request.POST.getlist('assets')
         include = self.request.POST.getlist('include')
@@ -363,7 +298,8 @@ class Word2VecSPModelView(FormView):
         weighted = int(self.request.POST['weighted'])
         source_signals = int(self.request.POST['source_signals'])
 
-        q = django_rq.get_queue('high')
+        q = django_rq.get_queue('default', default_timeout=36000)
+
         h_contents = self.request.POST['headline_contents']
         if h_contents:
             h_contents = h_contents.split(',')
@@ -375,135 +311,9 @@ class Word2VecSPModelView(FormView):
         word2vec = gensim.models.Word2Vec.load("word2vec.model")
         vectors = word2vec.wv
         include = self.request.POST.getlist('include')
-
-        for asset in assets:
-            obj = Asset.objects.get(ticker=asset)
-            if "volume" in include:
-                volume = True
-            if "assets" in include:
-                assets = True
-            spm.add_asset_variable(asset=asset, column_name=obj.name, zscore=True, volume=volume, get_asset=assets)
-        print(spm.get_df().head())
+        request = self.request.POST
         sw = stopwords.words('english')
-        for cat in cats:
-            if source==0:
-                if weighted == 1 or source_signals == 1:
-                    for s in irish_sources:
-                        q.enqueue(spm.add_sentiment_variable, category=cat, column_name="{}.{}".format(s, cat), source_filter=[s],set=True, h_contents= h_contents, weighted=True, countries=True)
-                        # spm.add_sentiment_variable(category=cat, column_name="{}.{}".format(s, cat), source_filter=[s],set=True, h_contents= h_contents, weighted=True, countries=True)
-                    if source_signals == 0:
-                        df = spm.get_df()
-                        df["Irish {}".format(cat)] = 0
-                        print(df.head())
-                        for c in irish_sources:
-                            df["Irish {}".format(cat)] += df["{}.{}".format(c, cat)]
-                            df = df.drop(["{}.{}".format(c, cat)], axis=1)
-                        spm.multivariate_df = df
-
-                    for s in uk_sources:
-                        q.enqueue(spm.add_sentiment_variable, category=cat, column_name="{}.{}".format(s, cat), source_filter=[s],set=True, h_contents= h_contents, weighted=True, countries=True)
-
-                        # spm.add_sentiment_variable(category=cat, column_name="{}.{}".format(s, cat), source_filter=[s],set=True, h_contents= h_contents, weighted=True, countries=True)
-                    if source_signals == 0:
-                        df = spm.get_df()
-                        df["UK {}".format(cat)] = 0
-                        for c in uk_sources:
-                            df["UK {}".format(cat)] += df["{}.{}".format(c, cat)]
-                            df = df.drop(["{}.{}".format(c, cat)], axis=1)
-                        spm.multivariate_df = df
-
-                else:
-                    q.enqueue(spm.add_sentiment_variable, category=cat, column_name="UK {}".format(cat), source_filter=uk_sources,set=True, )
-                    q.enqueue(spm.add_sentiment_variable, category=cat, column_name="Irish {}".format(cat), source_filter=irish_sources,set=True, )
-
-                    # spm.add_sentiment_variable(category=cat, column_name="UK {}".format(cat), source_filter=uk_sources,set=True, )
-                    # spm.add_sentiment_variable(category=cat, column_name="Irish {}".format(cat), source_filter=irish_sources,set=True, )
-            else:
-                if weighted == 1:
-                    sources = list(Source.objects.all().values_list('id', flat=True))
-                    for s in sources:
-                        q.enqueue(spm.add_sentiment_variable, category=cat, column_name="{}.{}".format(s, cat), source_filter=[s], set=True, h_contents= h_contents, weighted=True, countries=False )
-
-                        # spm.add_sentiment_variable(category=cat, column_name="{}.{}".format(s, cat), source_filter=[s], set=True, h_contents= h_contents, weighted=True, countries=False)
-                    df = spm.get_df()
-                    df["{}".format(cat)] = 0
-                    for c in sources:
-                        df["{}".format(cat)] += df["{}.{}".format(c, cat)]
-                        df = df.drop(["{}.{}".format(c, cat)], axis=1)
-                    spm.multivariate_df = df
-                else:
-                    q.enqueue(spm.add_sentiment_variable, category=cat, column_name="{}".format(cat), set=True,  )
-
-                    # spm.add_sentiment_variable(category=cat, column_name="{}".format(cat), set=True, )
-        for cat in w_cats:
-            words = [w.lower() for w in Category.objects.get(name=cat).words.all().values_list('word', flat=True)]
-            expanded_list = set()
-            index = 0
-            length = len(words)
-            for w in words:
-                index +=1
-                try:
-                    if w in sw:
-                        continue
-                    werds = [x for (x,_) in vectors.most_similar(positive=w, topn=topn)]
-                    for x in werds:
-                        expanded_list.add(x)
-                    progress(index, length, status="Added word")
-                except Exception as e:
-                    progress(index, length, status="Word not added. {}".format(e))
-                expanded_list.add(w)
-            print("Expanded list: {}".format(expanded_list))
-            if source==0:
-                if weighted == 1:
-                    for s in irish_sources:
-                        sourcename = Source.objects.get(id=s).name
-                        spm.add_sentiment_variable(column_name="{} {}".format(sourcename, cat), sentiment_words=list(expanded_list), source_filter=[s],set=True, h_contents= h_contents, weighted=True, countries=True)
-                    if source_signals == 0:
-                        df = spm.get_df()
-                        df["Word2Vec Irish {}".format(cat)] = 0
-                        print(df.head())
-                        for c in irish_sources:
-                            sourcename = Source.objects.get(id=c).name
-                            df["Word2Vec Irish {}".format(cat)] += df["{} {}".format(sourcename, cat)]
-                            df = df.drop(["{} {}".format(sourcename, cat)], axis=1)
-                        spm.multivariate_df = df
-
-                    for s in uk_sources:
-                        sourcename=Source.objects.get(id=s).name
-                        spm.add_sentiment_variable(column_name="{} {}".format(sourcename, cat), sentiment_words=list(expanded_list), source_filter=[s],set=True, h_contents= h_contents, weighted=True, countries=True)
-                    if source_signals == 0:
-                        df = spm.get_df()
-                        df["Word2Vec UK {}".format(cat)] = 0
-                        for c in uk_sources:
-                            sourcename=Source.objects.get(id=c).name
-                            df["Word2Vec UK {}".format(cat)] += df["{} {}".format(sourcename, cat)]
-                            df = df.drop(["{} {}".format(sourcename, cat)], axis=1)
-                        spm.multivariate_df = df
-
-                else:
-
-                    spm.add_sentiment_variable(column_name="Word2Vec UK {}".format(cat), source_filter=uk_sources, sentiment_words=list(expanded_list), h_contents= h_contents)
-                    spm.add_sentiment_variable(column_name="Word2Vec Irish {}".format(cat), source_filter=irish_sources, sentiment_words=list(expanded_list), h_contents= h_contents)
-            else:
-                if weighted == 1 or source_signals == 1:
-                    sources = list(Source.objects.all().values_list('id', flat=True))
-                    for s in sources:
-                        sourcename=Source.objects.get(id=s).name
-                        spm.add_sentiment_variable(column_name="{} {}".format(sourcename, cat), set=True, source_filter=[s], sentiment_words=list(expanded_list), h_contents= h_contents, weighted=True, countries=False)
-                    if source_signals == 0:
-                        df = spm.get_df()
-                        df["{}".format(cat)] = 0
-                        for c in sources:
-                            sourcename=Source.objects.get(id=c).name
-                            df["{}".format(cat)] += df["{} {}".format(sourcename, cat)]
-                            df = df.drop(["{} {}".format(sourcename, cat)], axis=1)
-                    spm.multivariate_df = df
-                else:
-                    spm.add_sentiment_variable(column_name="Word2Vec {}".format(cat), sentiment_words=list(expanded_list), h_contents= h_contents)
-        name = self.request.POST['name']
-        description = self.request.POST['description']
-
-        spm.save_to_database(name, description)
+        q.enqueue(spm.create_word2vec, request, cats, assets, include, w_cats, topn, source, weighted, source_signals, h_contents, irish_sources, uk_sources, vectors, sw)
         return super().form_valid(form)
 
 class SentiWordNetView(FormView):
@@ -515,10 +325,10 @@ class SentiWordNetView(FormView):
         assets = self.request.POST.getlist('assets')
         source = int(self.request.POST['source'])
         source_signals = int(self.request.POST['source_signals'])
-        q = Queue(connection=conn)
         include_pos = int(self.request.POST['pos'])
         h_contents = self.request.POST['headline_contents']
         weighted = int(self.request.POST['weighted'])
+        include = self.request.POST.getlist('include')
         if h_contents:
             h_contents = h_contents.split(',')
             print("H contents found: {}".format(h_contents))
@@ -531,79 +341,9 @@ class SentiWordNetView(FormView):
             irish_sources = list(Source.objects.filter(country=0).values_list('id', flat=True))
             uk_sources = list(Source.objects.filter(country=1).values_list('id', flat=True))
         spm = model.SentimentPriceModel()
-        include = self.request.POST.getlist('include')
-
-        for asset in assets:
-            obj = Asset.objects.get(ticker=asset)
-            if "volume" in include:
-                volume = True
-            if "assets" in include:
-                assets = True
-            spm.add_asset_variable(asset=asset, column_name=obj.name, zscore=True, volume=True)
-        print(spm.get_df().head())
-        if source==0:
-            if weighted == 1 or source_signals == 1:
-                for s in irish_sources:
-                    sourcename = Source.objects.get(id=s).name
-                    spm.add_sentiment_variable(column_name="{} SentiWordNet".format(sourcename), source_filter=[s], sentiwordnet=True, include_pos = include_pos, h_contents= h_contents, weighted=False, countries=True)
-                if source_signals == 0:
-                    df = spm.get_df()
-                    df["Irish SentiWordNet Negative"] = 0
-                    if include_pos:
-                        df["Irish SentiWordNet Positive"] = 0
-                    for c in irish_sources:
-                        sourcename = Source.objects.get(id=c).name
-                        df["Irish SentiWordNet Negative"] += df["{} SentiWordNet Negative".format(sourcename)]
-                        df = df.drop(["{} SentiWordNet Negative".format(sourcename)], axis=1)
-                        if include_pos:
-                            df["Irish SentiWordNet Positive"] += df["{} SentiWordNet Positive".format(sourcename)]
-                            df = df.drop(["{} SentiWordNet Positive".format(sourcename)], axis=1)
-                    spm.multivariate_df = df
-                for s in uk_sources:
-                    sourcename = Source.objects.get(id=s).name
-                    spm.add_sentiment_variable(column_name="{} SentiWordNet".format(sourcename), source_filter=[s], sentiwordnet=True, include_pos = include_pos, h_contents= h_contents, weighted=False, countries=True)
-
-                if source_signals == 0:
-                    df = spm.get_df()
-                    df["UK SentiWordNet Negative"] = 0
-                    if include_pos:
-                        df["UK SentiWordNet Positive"] = 0
-                    for c in uk_sources:
-                        sourcename = Source.objects.get(id=c).name
-                        df["UK SentiWordNet Negative"] += df["{} SentiWordNet Negative".format(sourcename)]
-                        df = df.drop(["{} SentiWordNet Negative".format(sourcename)], axis=1)
-                        if include_pos:
-                            df["UK SentiWordNet Positive"] += df["{}.SentiWordNet Positive".format(c)]
-                            df = df.drop(["{}.SentiWordNet Positive".format(c)], axis=1)
-                    spm.multivariate_df = df
-            else:
-                spm.add_sentiment_variable(column_name="SentiWordNet UK", sentiwordnet=True, include_pos = include_pos, set=True, source_filter=uk_sources, h_contents= h_contents,)
-                spm.add_sentiment_variable(column_name="SentiWordNet Irish", sentiwordnet=True, include_pos = include_pos, set=True, source_filter=irish_sources, h_contents= h_contents,)
-        else:
-            if weighted == 1 or source_signals==1:
-                sources = list(Source.objects.all().values_list('id', flat=True))
-                for s in sources:
-                    sourcename = Source.objects.get(id=s).name
-                    spm.add_sentiment_variable(column_name="{} SentiWordNet".format(sourcename), source_filter=[s], sentiwordnet=True, include_pos = include_pos, h_contents= h_contents, weighted=True, countries=False)
-                if source_signals == 0:
-                    df = spm.get_df()
-                    df["SentiWordNet Negative"] = 0
-                    if include_pos:
-                        df["SentiWordNet Positive"] = 0
-                    for c in sources:
-                        sourcename = Source.objects.get(id=c).name
-                        df["SentiWordNet Negative"] += df["{} SentiWordNet Negative".format(sourcename)]
-                        df = df.drop(["{} SentiWordNet Negative".format(sourcename)], axis=1)
-                        if include_pos:
-                            df["SentiWordNet Positive"] += df["{}.SentiWordNet Positive".format(c)]
-                            df = df.drop(["{}.SentiWordNet Positive".format(c)], axis=1)
-                    spm.multivariate_df = df
-            else:
-                spm.add_sentiment_variable(column_name="SentiWordNet", sentiwordnet=True, include_pos = include_pos, set=True, )
-
-        name = self.request.POST['name']
-        description = self.request.POST['description']
-        spm.save_to_database(name, description)
+        request = self.request.POST
+        q = django_rq.get_queue('default', default_timeout=36000)
+        q.enqueue(spm.create_sentiwordnet, request, assets, source, source_signals, include_pos, h_contents, weighted, irish_sources, uk_sources, include)
         return super().form_valid(form)
 
 class Word2VecMaker(FormView):
@@ -616,7 +356,7 @@ class Word2VecMaker(FormView):
         name = self.request.POST['name']
         headline = self.request.POST['headline']
         content = self.request.POST['content']
-        q = Queue(connection=conn)
+        q = django_rq.get_queue('default', default_timeout=36000)
         epochs = int(self.request.POST['epochs'])
         min_count = int(self.request.POST['min_count'])
         window = int(self.request.POST['window'])
@@ -628,6 +368,7 @@ class Word2VecMaker(FormView):
         model.create_model(phrased, epochs, min_count, window, name=name)
         wvm = Word2VecModel(name=name, pathname=os.path.join(BASE_DIR, name))
         wvm.save()
+
         return super().form_valid(form)
 
 class DictMaker(FormView):
@@ -679,7 +420,6 @@ class VAROverview(TemplateView):
             context['table'] = "<h5> Please select year, model and lag. </h5>\n\
                                 <p>By choosing a lag you can see what lag order best suits the variables</p>"
         return context
-
 
 class ModelsView(ListView):
     template_name = "sentiment/modelslist.html"

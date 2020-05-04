@@ -141,8 +141,6 @@ class DocModelGenerator(object):
         return [a for a in self._article_iter(similar)]
 
 
-
-
 class SentimentPriceModel(object):
     sentiments = Category.objects.all().values_list('name', flat=True)
     weights_c = {'Financial Times (London, England)': 385833/1503479, 'The Irish Times': 171288/383244, 'Irish Independent': 211956/383244,'The Times (London)': 799655/1503479,  'The Guardian(London)': 317991/1503479 }
@@ -633,8 +631,6 @@ class SentimentPriceModel(object):
         self.save('aggregate2.csv')
         return self.mp
 
-
-
     def remove_variable(self, column=None):
         if not column:
             raise Exception("Please provide a column name.")
@@ -680,6 +676,250 @@ class SentimentPriceModel(object):
                 val.save()
         logging.info("Created {}/{} required objects during save".format(object_creation_count, desired_count))
 
+    def create_general_inquirer(self, request, cats, assets, source, h_contents, weighted, source_signals, included_countries, irish_sources, uk_sources, include):
+
+        for asset in assets:
+            obj = Asset.objects.get(ticker=asset)
+            if "volume" in include:
+                volume = True
+            if "assets" in include:
+                assets = True
+            self.add_asset_variable(asset=asset, column_name=obj.name, zscore=True, volume=True)
+
+        for cat in cats:
+            if source==0:
+                if weighted == 1 or source_signals == 1:
+                    for s in irish_sources:
+                        self.add_sentiment_variable(category=cat, column_name="{}.{}".format(s, cat), source_filter=[s],set=True, h_contents= h_contents, weighted=True, countries=True)
+                    if source_signals == 0:
+                        df = self.get_df()
+                        df["Irish {}".format(cat)] = 0
+                        print(df.head())
+                        for c in irish_sources:
+                            df["Irish {}".format(cat)] += df["{}.{}".format(c, cat)]
+                            df = df.drop(["{}.{}".format(c, cat)], axis=1)
+                        self.multivariate_df = df
+
+                    for s in uk_sources:
+                        self.add_sentiment_variable(category=cat, column_name="{}.{}".format(s, cat), source_filter=[s],set=True, h_contents= h_contents, weighted=True, countries=True)
+
+                    if source_signals == 0:
+                        df = self.get_df()
+                        df["UK {}".format(cat)] = 0
+                        for c in uk_sources:
+                            df["UK {}".format(cat)] += df["{}.{}".format(c, cat)]
+                            df = df.drop(["{}.{}".format(c, cat)], axis=1)
+                        self.multivariate_df = df
+
+                else:
+                    self.add_sentiment_variable(category=cat, column_name="UK {}".format(cat), source_filter=uk_sources,set=True)
+                    self.add_sentiment_variable(category=cat, column_name="Irish {}".format(cat), source_filter=irish_sources,set=True)
+
+            else:
+                if weighted == 1:
+                    sources = list(Source.objects.all().values_list('id', flat=True))
+                    for s in sources:
+                        self.add_sentiment_variable(category=cat, column_name="{}.{}".format(s, cat), source_filter=[s], set=True, h_contents= h_contents, weighted=True, countries=False)
+                    df = self.get_df()
+                    df["{}".format(cat)] = 0
+                    for c in sources:
+                        df["{}".format(cat)] += df["{}.{}".format(c, cat)]
+                        df = df.drop(["{}.{}".format(c, cat)], axis=1)
+                    self.multivariate_df = df
+                else:
+                    self.add_sentiment_variable(category=cat, column_name="{}".format(cat), set=True, )
+        name = request['name']
+        description = request['description']
+        self.save_to_database(name, description)
+
+    def create_sentiwordnet(self, request, assets, source, source_signals, include_pos, h_contents, weighted, irish_sources, uk_sources, include):
+        for asset in assets:
+            obj = Asset.objects.get(ticker=asset)
+            if "volume" in include:
+                volume = True
+            if "assets" in include:
+                assets = True
+            self.add_asset_variable(asset=asset, column_name=obj.name, zscore=True, volume=True)
+        if source==0:
+            if weighted == 1 or source_signals == 1:
+                for s in irish_sources:
+                    sourcename = Source.objects.get(id=s).name
+                    self.add_sentiment_variable(column_name="{} SentiWordNet".format(sourcename), source_filter=[s], sentiwordnet=True, include_pos = include_pos, h_contents= h_contents, weighted=False, countries=True)
+                if source_signals == 0:
+                    df = self.get_df()
+                    df["Irish SentiWordNet Negative"] = 0
+                    if include_pos:
+                        df["Irish SentiWordNet Positive"] = 0
+                    for c in irish_sources:
+                        sourcename = Source.objects.get(id=c).name
+                        df["Irish SentiWordNet Negative"] += df["{} SentiWordNet Negative".format(sourcename)]
+                        df = df.drop(["{} SentiWordNet Negative".format(sourcename)], axis=1)
+                        if include_pos:
+                            df["Irish SentiWordNet Positive"] += df["{} SentiWordNet Positive".format(sourcename)]
+                            df = df.drop(["{} SentiWordNet Positive".format(sourcename)], axis=1)
+                    self.multivariate_df = df
+                for s in uk_sources:
+                    sourcename = Source.objects.get(id=s).name
+                    self.add_sentiment_variable(column_name="{} SentiWordNet".format(sourcename), source_filter=[s], sentiwordnet=True, include_pos = include_pos, h_contents= h_contents, weighted=False, countries=True)
+
+                if source_signals == 0:
+                    df = self.get_df()
+                    df["UK SentiWordNet Negative"] = 0
+                    if include_pos:
+                        df["UK SentiWordNet Positive"] = 0
+                    for c in uk_sources:
+                        sourcename = Source.objects.get(id=c).name
+                        df["UK SentiWordNet Negative"] += df["{} SentiWordNet Negative".format(sourcename)]
+                        df = df.drop(["{} SentiWordNet Negative".format(sourcename)], axis=1)
+                        if include_pos:
+                            df["UK SentiWordNet Positive"] += df["{}.SentiWordNet Positive".format(c)]
+                            df = df.drop(["{}.SentiWordNet Positive".format(c)], axis=1)
+                    self.multivariate_df = df
+            else:
+                self.add_sentiment_variable(column_name="SentiWordNet UK", sentiwordnet=True, include_pos = include_pos, set=True, source_filter=uk_sources, h_contents= h_contents,)
+                self.add_sentiment_variable(column_name="SentiWordNet Irish", sentiwordnet=True, include_pos = include_pos, set=True, source_filter=irish_sources, h_contents= h_contents, )
+        else:
+            if weighted == 1 or source_signals==1:
+                sources = list(Source.objects.all().values_list('id', flat=True))
+                for s in sources:
+                    sourcename = Source.objects.get(id=s).name
+                    self.add_sentiment_variable(column_name="{} SentiWordNet".format(sourcename), source_filter=[s], sentiwordnet=True, include_pos = include_pos, h_contents= h_contents, weighted=True, countries=False)
+                if source_signals == 0:
+                    df = self.get_df()
+                    df["SentiWordNet Negative"] = 0
+                    if include_pos:
+                        df["SentiWordNet Positive"] = 0
+                    for c in sources:
+                        sourcename = Source.objects.get(id=c).name
+                        df["SentiWordNet Negative"] += df["{} SentiWordNet Negative".format(sourcename)]
+                        df = df.drop(["{} SentiWordNet Negative".format(sourcename)], axis=1)
+                        if include_pos:
+                            df["SentiWordNet Positive"] += df["{}.SentiWordNet Positive".format(c)]
+                            df = df.drop(["{}.SentiWordNet Positive".format(c)], axis=1)
+                    self.multivariate_df = df
+            else:
+                self.add_sentiment_variable(column_name="SentiWordNet", sentiwordnet=True, include_pos = include_pos, set=True, )
+
+        name = request['name']
+        description = request['description']
+        self.save_to_database(name, description)
+
+    def create_word2vec(self, request, cats, assets, include, w_cats, topn, source, weighted, source_signals, h_contents, irish_sources, uk_sources, vectors, sw):
+        wordset = set()
+        for asset in assets:
+            obj = Asset.objects.get(ticker=asset)
+            if "volume" in include:
+                volume = True
+            if "assets" in include:
+                assets = True
+            self.add_asset_variable(asset=asset, column_name=obj.name, zscore=True, volume=volume, get_asset=assets)
+        for cat in cats:
+            if source==0:
+                if weighted == 1 or source_signals == 1:
+                    for s in irish_sources:
+                        self.add_sentiment_variable(category=cat, column_name="{}.{}".format(s, cat), source_filter=[s],set=True, h_contents= h_contents, weighted=True, countries=True)
+                    if source_signals == 0:
+                        df = self.get_df()
+                        df["Irish {}".format(cat)] = 0
+                        print(df.head())
+                        for c in irish_sources:
+                            df["Irish {}".format(cat)] += df["{}.{}".format(c, cat)]
+                            df = df.drop(["{}.{}".format(c, cat)], axis=1)
+                        self.multivariate_df = df
+
+                    for s in uk_sources:
+                        self.add_sentiment_variable(category=cat, column_name="{}.{}".format(s, cat), source_filter=[s],set=True, h_contents= h_contents, weighted=True, countries=True)
+                    if source_signals == 0:
+                        df = self.get_df()
+                        df["UK {}".format(cat)] = 0
+                        for c in uk_sources:
+                            df["UK {}".format(cat)] += df["{}.{}".format(c, cat)]
+                            df = df.drop(["{}.{}".format(c, cat)], axis=1)
+                        self.multivariate_df = df
+
+                else:
+                    self.add_sentiment_variable(category=cat, column_name="UK {}".format(cat), source_filter=uk_sources,set=True, )
+                    self.add_sentiment_variable(category=cat, column_name="Irish {}".format(cat), source_filter=irish_sources,set=True, )
+            else:
+                if weighted == 1:
+                    sources = list(Source.objects.all().values_list('id', flat=True))
+                    for s in sources:
+                        self.add_sentiment_variable(category=cat, column_name="{}.{}".format(s, cat), source_filter=[s], set=True, h_contents= h_contents, weighted=True, countries=False)
+                    df = self.get_df()
+                    df["{}".format(cat)] = 0
+                    for c in sources:
+                        df["{}".format(cat)] += df["{}.{}".format(c, cat)]
+                        df = df.drop(["{}.{}".format(c, cat)], axis=1)
+                    self.multivariate_df = df
+                else:
+                    self.add_sentiment_variable(category=cat, column_name="{}".format(cat), set=True, )
+        for cat in w_cats:
+            words = [w.lower() for w in Category.objects.get(name=cat).words.all().values_list('word', flat=True)]
+            expanded_list = set()
+            index = 0
+            length = len(words)
+            for w in words:
+                index +=1
+                try:
+                    if w in sw:
+                        continue
+                    werds = [x for (x,_) in vectors.most_similar(positive=w, topn=topn)]
+                    for x in werds:
+                        expanded_list.add(x)
+                    progress(index, length, status="Added word")
+                except Exception as e:
+                    progress(index, length, status="Word not added. {}".format(e))
+                expanded_list.add(w)
+            if source==0:
+                if weighted == 1:
+                    for s in irish_sources:
+                        sourcename = Source.objects.get(id=s).name
+                        self.add_sentiment_variable(column_name="{} {}".format(sourcename, cat), sentiment_words=list(expanded_list), source_filter=[s],set=True, h_contents= h_contents, weighted=True, countries=True, )
+                    if source_signals == 0:
+                        df = self.get_df()
+                        df["Word2Vec Irish {}".format(cat)] = 0
+                        print(df.head())
+                        for c in irish_sources:
+                            sourcename = Source.objects.get(id=c).name
+                            df["Word2Vec Irish {}".format(cat)] += df["{} {}".format(sourcename, cat)]
+                            df = df.drop(["{} {}".format(sourcename, cat)], axis=1)
+                        self.multivariate_df = df
+
+                    for s in uk_sources:
+                        sourcename=Source.objects.get(id=s).name
+                        self.add_sentiment_variable(column_name="{} {}".format(sourcename, cat), sentiment_words=list(expanded_list), source_filter=[s],set=True, h_contents= h_contents, weighted=True, countries=True, )
+                    if source_signals == 0:
+                        df = self.get_df()
+                        df["Word2Vec UK {}".format(cat)] = 0
+                        for c in uk_sources:
+                            sourcename=Source.objects.get(id=c).name
+                            df["Word2Vec UK {}".format(cat)] += df["{} {}".format(sourcename, cat)]
+                            df = df.drop(["{} {}".format(sourcename, cat)], axis=1)
+                        self.multivariate_df = df
+
+                else:
+
+                    self.add_sentiment_variable(column_name="Word2Vec UK {}".format(cat), source_filter=uk_sources, sentiment_words=list(expanded_list), h_contents= h_contents, )
+                    self.add_sentiment_variable(column_name="Word2Vec Irish {}".format(cat), source_filter=irish_sources, sentiment_words=list(expanded_list), h_contents= h_contents, )
+            else:
+                if weighted == 1 or source_signals == 1:
+                    sources = list(Source.objects.all().values_list('id', flat=True))
+                    for s in sources:
+                        sourcename=Source.objects.get(id=s).name
+                        self.add_sentiment_variable(column_name="{} {}".format(sourcename, cat), set=True, source_filter=[s], sentiment_words=list(expanded_list), h_contents= h_contents, weighted=True, countries=False, )
+                    if source_signals == 0:
+                        df = self.get_df()
+                        df["{}".format(cat)] = 0
+                        for c in sources:
+                            sourcename=Source.objects.get(id=c).name
+                            df["{}".format(cat)] += df["{} {}".format(sourcename, cat)]
+                            df = df.drop(["{} {}".format(sourcename, cat)], axis=1)
+                    self.multivariate_df = df
+                else:
+                    self.add_sentiment_variable(column_name="Word2Vec {}".format(cat), sentiment_words=list(expanded_list), h_contents= h_contents, )
+        name = request['name']
+        description = request['description']
+        self.save_to_database(name, description)
 
 class ArticleSentimentPriceModel(object):
     """

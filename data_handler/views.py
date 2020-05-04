@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404
 from django.db.models import Prefetch
 from .preprocessing import produce_plots
 from django.shortcuts import redirect
-
+import django_rq
 from django.views.generic.base import TemplateView
 from .data_handler import get_related_articles, get_relevant_stocks, produce_article_freq_plots, produce_source_article_freq_plots, produce_stock_freq_plots
 from rest_framework import generics
@@ -144,7 +144,6 @@ class CategoryView(ListView):
     template_name = 'data/categories.html'
     queryset = Category.objects.all()
 
-
 class FinancialDataView(ListView):
     template_name='data/stockprices.html'
     queryset = StockPrice.objects.filter(date__range=['2016-06-01', '2017-08-01']).order_by('date')
@@ -194,9 +193,10 @@ class FinancialDataPreprocessView(FormView):
         path = save_file(self.request.FILES['file'], self.request.POST['title'])
         print("Success! File saved to {}".format(path))
         fdp = FinancialDataPreprocessor(path)
+        q = django_rq.get_queueu('default', default_timeout=360000)
         asset = fdp.set_asset(self.request.POST['asset_name'], self.request.POST['ticker'])
         print(asset)
-        fdp.create_objects()
+        q.enqueue(fdp.create_objects)
         return super().form_valid(form)
 
 class ArticlePreprocessorView(FormView):
@@ -208,7 +208,8 @@ class ArticlePreprocessorView(FormView):
         path = save_file(self.request.FILES['file'], self.request.POST['title'])
         print("Success! File saved to {}".format(path))
         ap = ArticlePreprocessor(path)
-        ap.create_objects()
+        q = django_rq.get_queueu('default', default_timeout=360000)
+        q.enqueue(ap.create_objects)
         return super().form_valid(form)
 
 class ArticleWordCountView(TemplateView):
@@ -234,8 +235,6 @@ class ArticleWordCountView(TemplateView):
             context['results'] = ""
         context['form'] = self.form
         return context
-
-
 
 class StockList(ListView):
     template_name = "data/stockslist.html"
