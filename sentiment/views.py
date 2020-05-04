@@ -279,9 +279,10 @@ class ModelDefineView(FormView):
                 uk_sources = list(Source.objects.filter(country=1).values_list('id', flat=True))
         spm = model.SentimentPriceModel()
         q = django_rq.get_queue('default', default_timeout=36000)
-        q.enqueue(spm.create_general_inquirer, request, cats, assets, source, h_contents, weighted, source_signals, included_countries, irish_sources, uk_sources, include, default_timeout=36000)
+        q.enqueue(spm.create_general_inquirer, request, cats, assets, source, h_contents, weighted, source_signals, included_countries, irish_sources, uk_sources, include)
         return super().form_valid(form)
 
+        
 class Word2VecSPModelView(FormView):
     template_name = "sentiment/w2vspmmodel.html"
     form_class = Word2VecSPModelForm
