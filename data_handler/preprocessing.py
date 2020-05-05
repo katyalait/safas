@@ -181,27 +181,36 @@ def produce_plots(articles):
     plt_div = plot(fig, output_type='div')
     return plt_div
 
+from data_handler.helpers import daterange
+from datetime import date as dt
 
-def tokenize(arts):
+def tokenize(start, end):
     sw = stopwords.words('english')
     lem = WordNetLemmatizer()
     f = []
-    length = len(arts)
     index = 0
-    for art in arts:
-        progress(index, length, status="{}".format(art.date_written))
-        c = art.contents
-        ts = word_tokenize(c)
-        for t in ts:
-            t = t.lower()
-            if not t.isalpha():
-                continue
-            if t in sw:
-                continue
-            l = lem.lemmatize(t)
-            if l in sw:
-                continue
-            f.append(l)
-        ts = " ".join(f)
-        art.tokens = ts
-        art.save()
+    d0 = datetime.strptime(start, "%Y-%m-%d")
+    d1 = datetime.strptime(end, "%Y-%m-%d")
+    delta = d1 - d0
+    length = delta.days
+    print(length)
+    for date in daterange(start, end):
+        arts = Article.objects.filter(date_written=date)
+        for art in arts:
+            index += 1
+            progress(index, length, status="{}".format(art.date_written))
+            c = art.contents
+            ts = word_tokenize(c)
+            for t in ts:
+                t = t.lower()
+                if not t.isalpha():
+                    continue
+                if t in sw:
+                    continue
+                l = lem.lemmatize(t)
+                if l in sw:
+                    continue
+                f.append(l)
+            ts = " ".join(f)
+            art.tokens = ts
+            art.save()
