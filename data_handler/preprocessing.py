@@ -24,19 +24,20 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 class ArticlePreprocessor(object):
-    def __init__(self, filename):
+    def __init__(self, filename, year):
         self.df = pd.read_csv(os.path.join(BASE_DIR, filename)).dropna()
-
+        start = "{}-01-01".format(year)
+        end = "{}-01-01".format(year+1)
         self.exist_arts = pd.DataFrame(([a['date_written'], a['headline']] for a in
-                                            Article.objects.all().values('headline', 'date_written').order_by('headline')),
+                                            Article.objects.filter(date_written__range=[start, end]).values('headline', 'date_written').order_by('headline')),
                                             columns=['date', 'headline'])
 
 
     def create_objects(self, add_contents=True):
         articles_len = len(self.df.index)
         for index, row in self.df.iterrows():
-            article = self.exist_arts.loc[self.exist_arts['headline']==row.headline]
-            if  article.empty:
+            article = self.exist_arts.loc[self.exist_arts['headline']==row['headline']]
+            if article.empty:
                 progress(index, articles_len, "Parsing article {}/{}... ".format(index, articles_len))
                 source = Source.objects.filter(name=row['source']).first()
                 if not source:
@@ -66,6 +67,10 @@ class ArticlePreprocessor(object):
                 article.date_written = date
                 article.save()
             else:
+                article = Article.objects.filter(headline=row['headline']).first()
+                if add_contents:
+                    self.add_contents(article, row['content'])
+                article.save()
                 progress(index, articles_len, "Article {}/{} exists ...".format(index, articles_len))
 
     def add_contents(self, article, contents):
