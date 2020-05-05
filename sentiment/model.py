@@ -406,19 +406,17 @@ class SentimentPriceModel(object):
         except:
             raise Exception("Model does not exist.")
         columns = Column.objects.filter(label=label)
-        queryset = Value.objects.filter(column__in=columns).order_by('date')
-        q_df = pd.DataFrame(([q.column.name, q.date, q.value] for q in queryset), columns=['column', 'date', 'value'])
-        column_list = list(q_df['column'].unique())
-        df = pd.DataFrame(columns=column_list.append('date'))
-        for column in q_df['column'].unique():
-            cur_col = q_df.loc[q_df['column']==column]
-            cur_col = cur_col.set_index('date')
-            df[column] = cur_col['value']
+        q_df = pd.DataFrame()
+        for col in columns:
+            vals = Value.objects.filter(column=col.id).order_by('date')
+            c_df = pd.DataFrame(list(vals.values_list('date', 'value')), columns=['date', col.name])
+            print(c_df)
+            c_df = c_df.set_index('date')
+            q_df = pd.concat([q_df, c_df], axis=1)
         if set:
-            print("Is na: {}".format(df.isna().sum()))
-            self.multivariate_df = df.fillna(0.001)
-
-        return df
+            print("Is na: {}".format(q_df.isna().sum()))
+            self.multivariate_df = q_df.fillna(0.001)
+        return q_df
 
     def slice_year(self, year):
         try:
