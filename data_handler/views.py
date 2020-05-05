@@ -92,7 +92,7 @@ class SourceViewSet(TemplateView):
 # Create your views here.
 class ArticleView(ListView):
     template_name='data/articles.html'
-    paginate_by = 1000
+    paginate_by = 10
     model = Article
 
     def get_queryset(self):
@@ -110,8 +110,7 @@ class ArticleView(ListView):
         return self.queryset
 
     def get_context_data(self, **kwargs):
-        q = django_rq.get_queue('default', default_timeout=360000)
-        q.enqueue(tokenize, '2016-05-13', '2020-01-01')
+
         context = super().get_context_data(**kwargs)
         context['articles'] = self.queryset.count()
         context['plotdiv'] = produce_article_freq_plots(self.queryset)
