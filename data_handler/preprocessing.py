@@ -196,8 +196,8 @@ def tokenize(start, end):
     print(length)
     for date in daterange(start, end):
         arts = Article.objects.filter(date_written=date)
+        index += 1
         for art in arts:
-            index += 1
             progress(index, length, status="{}".format(art.date_written))
             c = art.contents
             ts = word_tokenize(c)
