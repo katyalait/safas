@@ -15,6 +15,7 @@ from rest_pandas import PandasView
 import pandas as pd
 import os#
 import django_rq
+from data_handler.preprocessing import tokenize
 from .data_handler import frequency_count
 from sentiment.model import DocModelGenerator
 from datetime import datetime, timedelta, date
