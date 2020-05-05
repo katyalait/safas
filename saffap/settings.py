@@ -72,7 +72,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-redis_url = urlparse(os.environ.get('REDISTOGO_URL', 'redis://localhost:6959'))
+redis_url = urlparse(os.environ.get('REDISTOGO_URL', 'redis://localhost:6379'))
 
 CACHES = {
     'default': {
@@ -88,15 +88,15 @@ CACHES = {
 
 RQ_QUEUES = {
     'high': {
-        'URL': os.getenv('REDISTOGO_URL', 'redis://localhost:6959'), # If you're on Heroku
+        'URL': os.getenv('REDISTOGO_URL', 'redis://localhost:6379'), # If you're on Heroku
         'DEFAULT_TIMEOUT': 50000,
     },
     'default': {
-        'URL': os.getenv('REDISTOGO_URL', 'redis://localhost:6959'), # If you're on Heroku
+        'URL': os.getenv('REDISTOGO_URL', 'redis://localhost:6379'), # If you're on Heroku
         'DEFAULT_TIMEOUT': 50000,
     },
     'low': {
-        'URL': os.getenv('REDISTOGO_URL', 'redis://localhost:6959'), # If you're on Heroku
+        'URL': os.getenv('REDISTOGO_URL', 'redis://localhost:6379'), # If you're on Heroku
         'DEFAULT_TIMEOUT': 50000,
     },
 }

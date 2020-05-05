@@ -74,7 +74,7 @@ class ArticlePreprocessor(object):
         word_tokens = word_tokenize(contents)
         lemmatizer = WordNetLemmatizer()
         filtered_tokens=[token for token in word_tokens if token not in stop_words and token.isalpha()]
-        lemmatized_tokens = "".join([lemmatizer.lemmatize(token.lower()) for token in filtered_tokens])
+        lemmatized_tokens = " ".join([lemmatizer.lemmatize(token.lower()) for token in filtered_tokens])
         article.tokens = lemmatized_tokens
         article.save()
 
@@ -180,3 +180,26 @@ def produce_plots(articles):
         fig.add_trace(go.Scatter(x=asset['date'], y=stats.zscore(asset['return']), mode='lines', name=a.name))
     plt_div = plot(fig, output_type='div')
     return plt_div
+
+
+def tokenize(arts):
+    sw = stopwords.words('english')
+    lem = WordNetLemmatizer()
+    f = []
+    for art in arts:
+        c = art.contents
+        ts = word_tokenize(c)
+        for t in ts:
+            t = t.lower()
+            if not t.isalpha():
+                continue
+            if t in sw:
+                continue
+            l = lem.lemmatize(t)
+            if l in sw:
+                continue
+            f.append(l)
+        ts = " ".join(f)
+        art.tokens = ts
+        art.save()
+    
