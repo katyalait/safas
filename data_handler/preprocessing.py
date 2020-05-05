@@ -186,7 +186,10 @@ def tokenize(arts):
     sw = stopwords.words('english')
     lem = WordNetLemmatizer()
     f = []
+    length = len(arts)
+    index = 0
     for art in arts:
+        progress(index, length, status="{}".format(art.date_written))
         c = art.contents
         ts = word_tokenize(c)
         for t in ts:
@@ -202,4 +205,3 @@ def tokenize(arts):
         ts = " ".join(f)
         art.tokens = ts
         art.save()
-    
