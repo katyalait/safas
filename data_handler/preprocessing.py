@@ -214,3 +214,6 @@ def tokenize(start, end):
             ts = " ".join(f)
             art.tokens = ts
             art.save()
+
+if __name__ == '__main__':
+    tokenize('2016-04-30', '2020-01-01')
