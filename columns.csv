@@ -1,0 +1,55 @@
+,label,name
+0,w2v basic separated market,ISEQ All Share Volume
+1,w2v basic separated market,ISEQ All Share Return
+2,gi basic separate 2,Euro Stoxx 50 Volume
+3,gi basic separate 2,FTSE 250 Return
+4,gi basic separate 2,FTSE 250 Volume
+5,gi basic separate 2,UK Negativ
+6,gi basic separate 2,Irish Negativ
+7,gi basic separate 2,ISEQ All Share Return
+8,gi basic separate 2,ISEQ All Share Volume
+9,gi basic separate 2,FTSE 100 Volume
+10,gi basic separate 2,FTSE 100 Return
+11,gi basic separate 2,Euro Stoxx 50 Return
+12,swn sources separate,FTSE 100 Volume
+13,swn sources separate,FTSE 100 Return
+14,swn sources separate,Euro Stoxx 50 Return
+15,swn sources separate,Euro Stoxx 50 Volume
+16,swn sources separate,FTSE 250 Return
+17,swn sources separate,FTSE 250 Volume
+18,swn sources separate,The Irish Times SentiWordNet Negative
+19,swn sources separate,Irish Independent SentiWordNet Negative
+20,swn sources separate,"Financial Times (London, England) SentiWordNet Negative"
+21,swn sources separate,The Times (London) SentiWordNet Negative
+22,swn sources separate,The Guardian(London) SentiWordNet Negative
+23,swn sources separate,ISEQ All Share Return
+24,swn sources separate,ISEQ All Share Volume
+25,swn basic separated,FTSE 250 Return
+26,swn basic separated,ISEQ All Share Volume
+27,swn basic separated,FTSE 100 Return
+28,swn basic separated,FTSE 100 Volume
+29,swn basic separated,Euro Stoxx 50 Return
+30,swn basic separated,Euro Stoxx 50 Volume
+31,swn basic separated,ISEQ All Share Return
+32,swn basic separated,FTSE 250 Volume
+33,swn basic separated,SentiWordNet UK Negative
+34,swn basic separated,SentiWordNet Irish Negative
+35,swn_headline_market 2,UK SentiWordNet Negative
+36,swn_headline_market 2,ISEQ All Share Return
+37,swn_headline_market 2,ISEQ All Share Volume
+38,swn_headline_market 2,FTSE 100 Return
+39,swn_headline_market 2,FTSE 100 Volume
+40,swn_headline_market 2,Euro Stoxx 50 Return
+41,swn_headline_market 2,Euro Stoxx 50 Volume
+42,swn_headline_market 2,FTSE 250 Return
+43,swn_headline_market 2,FTSE 250 Volume
+44,swn_headline_market 2,Irish SentiWordNet Negative
+45,w2v weighted aggrgate 2,ISEQ All Share Volume
+46,w2v weighted aggrgate 2,FTSE 100 Return
+47,w2v weighted aggrgate 2,FTSE 100 Volume
+48,w2v weighted aggrgate 2,Euro Stoxx 50 Return
+49,w2v weighted aggrgate 2,Euro Stoxx 50 Volume
+50,w2v weighted aggrgate 2,FTSE 250 Return
+51,w2v weighted aggrgate 2,FTSE 250 Volume
+52,w2v weighted aggrgate 2,Negativ
+53,w2v weighted aggrgate 2,ISEQ All Share Return

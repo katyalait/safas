@@ -282,7 +282,7 @@ class ModelDefineView(FormView):
         q.enqueue(spm.create_general_inquirer, request, cats, assets, source, h_contents, weighted, source_signals, included_countries, irish_sources, uk_sources, include)
         return super().form_valid(form)
 
-        
+
 class Word2VecSPModelView(FormView):
     template_name = "sentiment/w2vspmmodel.html"
     form_class = Word2VecSPModelForm
@@ -431,8 +431,12 @@ def delete_view(request, pk):
     cs = Column.objects.filter(label=pk)
     for c in cs:
         vs = Value.objects.filter(column=c.id)
+        length = len(vs)
+        index = 0
         for v in vs:
+            progress(index, length, "{}".format(c.name))
             v.delete()
+            index +=1
         c.delete()
     w2v.delete()
     response = redirect('models')
