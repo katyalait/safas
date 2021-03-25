@@ -79,7 +79,7 @@ python-docx==0.8.10
 python-dotenv==0.11.0
 pytz==2019.3
 PyWavelets==1.1.1
-PyYAML==5.3
+PyYAML==5.4
 pyzmq==19.0.0
 queuelib==1.5.0
 requests==2.22.0
