@@ -89,7 +89,7 @@ rest-pandas==1.1.0
 retrying==1.3.3
 redis>=3.0.0
 click>=5.0
-rsa==4.0
+rsa==4.7
 s3transfer==0.3.3
 scipy==1.4.1
 six==1.14.0
